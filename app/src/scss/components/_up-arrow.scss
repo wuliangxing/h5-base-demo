@@ -1,10 +1,10 @@
 @charset "UTF-8";
 
 .up-arrow {
-    width: 2rem;
-    height: 2rem;
+    width: 216px;
+    height: 216px;
     position: fixed;
-    bottom: 2rem;
+    bottom: 24px;
     left: 50%;
     transform: translate3d(-50%, 0, 0);
     z-index: 999;
@@ -13,12 +13,12 @@
     padding: 0;
     animation: upArrowAni 2s infinite linear;
     i {
-        width: 2rem;
-        height: 2rem;
+        width: 216px;
+        height: 216px;
         text-align: center;
-        line-height: 2rem;
+        line-height: 216px;
         color: #fff;
-        font-size: 1.5rem;
+        font-size: 162px;
     }
 }
 

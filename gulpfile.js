@@ -17,6 +17,9 @@ var streamSeries = require('stream-series');
 var plumber = require('gulp-plumber');
 var uglify = require('gulp-uglify');
 
+var postcss = require('gulp-postcss');
+var px2rem = require('postcss-px2rem');
+
 var vendors = require('./config/vendors');
 
 
@@ -59,10 +62,16 @@ gulp.task('publish-audios', function () {
         .pipe(gulp.dest('app/dist/audios'));
 });
 
+gulp.task('publish-libs', function () {
+    return gulp.src('app/src/libs/*')
+        .pipe(gulp.dest('app/dist/libs'))
+});
+
 // compile sass, concat stylesheets in the right order,
-// and save as app/dist/stylesheets/bundle.css
-gulp.task('publish-css', function () {
+// and save as app/dist/css/bundle.css
+gulp.task('publish-css',  function () {
     var cssVendors = vendors.stylesheets;
+    var processors = [px2rem({ remUnit: 108 })];
 
     return streamSeries(
         gulp.src(cssVendors),
@@ -73,15 +82,16 @@ gulp.task('publish-css', function () {
             .pipe(sass({
                 outputStyle: 'expanded'
             }))
+            .pipe(postcss(processors))
             .pipe(autoprefixer())
     )
         .pipe(concat('bundle.css'))
-        .pipe(gulp.dest('app/dist/stylesheets'))
+        .pipe(gulp.dest('app/dist/css'))
         .pipe(browserSync.stream());
 });
 
 // bundle CommonJS modules under app/src/javascripts, concat javascripts in the right order,
-// and save as app/dist/javascripts/bundle.js
+// and save as app/dist/js/bundle.js
 gulp.task('publish-js', function () {
     var jsVendors = vendors.javascripts;
 
@@ -97,16 +107,16 @@ gulp.task('publish-js', function () {
             }))
         )
         .pipe(concat('bundle.js'))
-        .pipe(gulp.dest('app/dist/javascripts'));
+        .pipe(gulp.dest('app/dist/js'));
 });
 
-// inject app/dist/stylesheets/bundle.css and app/dist/javascripts/bundle.js into app/src/index.html
+// inject app/dist/css/bundle.css and app/dist/js/bundle.js into app/src/index.html
 // and save as app/dist/index.html
 gulp.task('inject', function () {
     var target = gulp.src('app/src/index.html');
     var assets = gulp.src([
-        'app/dist/stylesheets/bundle.css',
-        'app/dist/javascripts/bundle.js'
+        'app/dist/css/bundle.css',
+        'app/dist/js/bundle.js'
     ], {
         read: false
     });
@@ -133,11 +143,15 @@ gulp.task('watch', function () {
     gulp.watch('app/src/fonts/**/*', ['publish-fonts']);
     gulp.watch('app/src/images/**/*', ['publish-images']);
     gulp.watch('app/src/audios/**/*', ['publish-audios']);
+    gulp.watch('app/src/libs/**/*', ['publish-libs']);
 
     gulp.watch('app/dist/index.html').on('change', browserSync.reload);
-    gulp.watch('app/dist/javascripts/*').on('change', browserSync.reload);
+    gulp.watch('app/dist/css/*').on('change', browserSync.reload);
+    gulp.watch('app/dist/js/*').on('change', browserSync.reload);
     gulp.watch('app/dist/fonts/*').on('change', browserSync.reload);
     gulp.watch('app/dist/images/*').on('change', browserSync.reload);
+    gulp.watch('app/dist/audios/*').on('change', browserSync.reload);
+    gulp.watch('app/dist/libs/*').on('change', browserSync.reload);
 });
 
 // delete files under app/dist
@@ -154,7 +168,7 @@ gulp.task('clean-files', function(cb) {
 
 // development workflow task
 gulp.task('dev', function (cb) {
-    runSequence(['clean-files'], ['publish-fonts', 'publish-images', 'publish-audios', 'publish-css', 'publish-js'], 'inject', 'watch', cb);
+    runSequence(['clean-files'], ['publish-fonts', 'publish-images', 'publish-audios', 'publish-libs', 'publish-css', 'publish-js'], 'inject', 'watch', cb);
 });
 
 // default task
@@ -166,33 +180,33 @@ gulp.task('default', ['dev']);
 ================================================= For Production ==============================================
 =============================================================================================================*/
 
-// minify app/dist/stylesheets/bundle.css and save as app/dist/stylesheets/bundle.min.css
+// minify app/dist/css/bundle.css and save as app/dist/css/bundle.min.css
 gulp.task('minify-css', function () {
-    return gulp.src('app/dist/stylesheets/bundle.css')
+    return gulp.src('app/dist/css/bundle.css')
         .pipe(minifycss())
         .pipe(rename({
             suffix: '.min'
         }))
-        .pipe(gulp.dest('app/dist/stylesheets'));
+        .pipe(gulp.dest('app/dist/css'));
 });
 
-// uglify app/dist/javascripts/bundle.js and save as app/dist/javascripts/bundle.min.js
+// uglify app/dist/js/bundle.js and save as app/dist/js/bundle.min.js
 gulp.task('uglify-js', function () {
-    return gulp.src('app/dist/javascripts/bundle.js')
+    return gulp.src('app/dist/js/bundle.js')
         .pipe(uglify())
         .pipe(rename({
             suffix: '.min'
         }))
-        .pipe(gulp.dest('app/dist/javascripts'));
+        .pipe(gulp.dest('app/dist/js'));
 });
 
-// inject app/dist/stylesheets/bundle.min.css and app/dist/javascripts/bundle.min.js into app/src/index.html
+// inject app/dist/css/bundle.min.css and app/dist/js/bundle.min.js into app/src/index.html
 // and save as app/dist/index.html
 gulp.task('inject-min', function () {
     var target = gulp.src('app/src/index.html');
     var assets = gulp.src([
-        'app/dist/stylesheets/bundle.min.css',
-        'app/dist/javascripts/bundle.min.js'
+        'app/dist/css/bundle.min.css',
+        'app/dist/js/bundle.min.js'
     ], {
         read: false
     });
@@ -205,11 +219,11 @@ gulp.task('inject-min', function () {
         .pipe(gulp.dest('app/dist'));
 });
 
-// delete app/dist/stylesheets/bundle.css and app/dist/javascripts/bundle.js
+// delete app/dist/css/bundle.css and app/dist/js/bundle.js
 gulp.task('del-bundle', function (cb) {
     return del([
-        'app/dist/stylesheets/bundle.css',
-        'app/dist/javascripts/bundle.js'
+        'app/dist/css/bundle.css',
+        'app/dist/js/bundle.js'
     ], cb);
 });
 
